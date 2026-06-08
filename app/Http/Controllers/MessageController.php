@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Events\MessageSent;
 
 class MessageController extends Controller
 {
@@ -44,6 +45,7 @@ class MessageController extends Controller
         ]);
 
         $conversation->update(['last_message_at' => now()]);
+        broadcast(new MessageSent($message))->toOthers();
 
         return $this->success('Message sent successfully', $message->load('sender:id,name,email'), 201);
     }
