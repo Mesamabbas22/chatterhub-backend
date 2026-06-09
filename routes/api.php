@@ -42,3 +42,5 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/communities/{community}/conversations', [CommunityConversationController::class, 'index']);
     Route::post('/communities/{community}/conversations', [CommunityConversationController::class, 'store']);
 });
+Broadcast::routes(['middleware' => ['auth:api']]);
+
