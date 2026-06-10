@@ -8,6 +8,7 @@ use App\Http\Controllers\CommunityConversationController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ConversationRequestController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\UserStatusController;
 
 Route::post('/chat', [AiChatController::class, 'chat']);
 Route::post('/chat/{provider}', [AiChatController::class, 'chat'])
@@ -19,6 +20,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:api')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/status/online', [UserStatusController::class, 'online']);
+    Route::post('/status/offline', [UserStatusController::class, 'offline']);
+    Route::get('/users/{user}/status', [UserStatusController::class, 'show']);
 
     Route::get('/conversations', [ConversationController::class, 'index']);
     Route::post('/conversations/private', [ConversationController::class, 'startPrivateChat']);
@@ -43,4 +47,3 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/communities/{community}/conversations', [CommunityConversationController::class, 'store']);
 });
 Broadcast::routes(['middleware' => ['auth:api']]);
-

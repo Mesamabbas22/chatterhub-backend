@@ -19,7 +19,7 @@ class ConversationRequestController extends Controller
         $query = $validated['query'];
 
         $users = User::query()
-            ->select('id', 'name', 'email')
+            ->select('id', 'name', 'email', 'is_online', 'last_seen_at')
             ->where('id', '!=', $authUserId)
             ->where(function ($builder) use ($query) {
                 $builder->where('name', 'like', "%{$query}%")
@@ -34,6 +34,8 @@ class ConversationRequestController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'is_online' => $user->is_online,
+                    'last_seen_at' => $user->last_seen_at,
                     'request_status' => $request?->status,
                 ];
             });
@@ -57,7 +59,7 @@ class ConversationRequestController extends Controller
         $existingRequest = $this->findActiveRequestBetween($senderId, $receiverId);
 
         if ($existingRequest?->status === 'pending') {
-            return $this->success('Request already pending', $existingRequest->load('sender:id,name,email', 'receiver:id,name,email'));
+            return $this->success('Request already pending', $existingRequest->load('sender:id,name,email,is_online,last_seen_at', 'receiver:id,name,email,is_online,last_seen_at'));
         }
 
         if ($existingRequest?->status === 'approved') {
@@ -84,7 +86,7 @@ class ConversationRequestController extends Controller
 
         return $this->success(
             'Conversation request sent successfully',
-            $conversationRequest->load('sender:id,name,email', 'receiver:id,name,email'),
+            $conversationRequest->load('sender:id,name,email,is_online,last_seen_at', 'receiver:id,name,email,is_online,last_seen_at'),
             201
         );
     }
@@ -92,7 +94,7 @@ class ConversationRequestController extends Controller
     public function received()
     {
         $requests = ConversationRequest::query()
-            ->with('sender:id,name,email')
+            ->with('sender:id,name,email,is_online,last_seen_at')
             ->where('receiver_id', auth('api')->id())
             ->where('status', 'pending')
             ->latest()
@@ -129,7 +131,7 @@ class ConversationRequestController extends Controller
 
         $conversationRequest->update(['status' => 'rejected']);
 
-        return $this->success('Conversation request rejected', $conversationRequest->load('sender:id,name,email', 'receiver:id,name,email'));
+        return $this->success('Conversation request rejected', $conversationRequest->load('sender:id,name,email,is_online,last_seen_at', 'receiver:id,name,email,is_online,last_seen_at'));
     }
 
     private function findRequestBetween(int $firstUserId, int $secondUserId): ?ConversationRequest
@@ -182,6 +184,6 @@ class ConversationRequestController extends Controller
             ]);
         }
 
-        return $conversation->load('participants.user:id,name,email', 'users:id,name,email');
+        return $conversation->load('participants.user:id,name,email,is_online,last_seen_at', 'users:id,name,email,is_online,last_seen_at');
     }
 }

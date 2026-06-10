@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\UserStatusUpdated;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
@@ -12,7 +13,8 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'firstName' => ['required', 'string', 'max:255'],
+            'lastName' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
         ]);
@@ -24,19 +26,20 @@ class AuthController extends Controller
         }
 
         if (Schema::hasColumn('users', 'firstName')) {
-            $userData['firstName'] = Str::before($validated['name'], ' ') ?: $validated['name'];
+            $userData['firstName'] = $validated['firstName'];
         }
 
         if (Schema::hasColumn('users', 'lastName')) {
-            $userData['lastName'] = Str::after($validated['name'], ' ') ?: '';
+            $userData['lastName'] = $validated['lastName'];
         }
 
         $user = User::create($userData);
 
         $token = auth('api')->login($user);
+        $this->markOnline($user);
 
         return $this->success('Registration successful', [
-            'user' => $user,
+            'user' => $user->fresh(),
             'token' => $token,
         ], 201);
     }
@@ -52,8 +55,11 @@ class AuthController extends Controller
             return $this->error('Invalid email or password', [], 401);
         }
 
+        $user = auth('api')->user();
+        $this->markOnline($user);
+
         return $this->success('Login successful', [
-            'user' => auth('api')->user(),
+            'user' => $user->fresh(),
             'token' => $token,
         ]);
     }
@@ -65,6 +71,15 @@ class AuthController extends Controller
 
     public function logout()
     {
+        $user = auth('api')->user();
+
+        $user->forceFill([
+            'is_online' => false,
+            'last_seen_at' => now(),
+        ])->save();
+
+        broadcast(new UserStatusUpdated($user->fresh()));
+
         auth('api')->logout();
 
         return $this->success('Logout successful');
@@ -80,5 +95,14 @@ class AuthController extends Controller
         }
 
         return $username;
+    }
+
+    private function markOnline(User $user): void
+    {
+        $user->forceFill([
+            'is_online' => true,
+        ])->save();
+
+        broadcast(new UserStatusUpdated($user->fresh()));
     }
 }

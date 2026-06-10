@@ -14,9 +14,9 @@ class ConversationController extends Controller
         $conversations = auth('api')->user()
             ->conversations()
             ->with([
-                'users:id,name,email',
+                'users:id,name,email,is_online,last_seen_at',
                 'community:id,name',
-                'messages' => fn ($query) => $query->latest()->limit(1)->with('sender:id,name,email'),
+                'messages' => fn ($query) => $query->latest()->limit(1)->with('sender:id,name,email,is_online,last_seen_at'),
             ])
             ->orderByDesc('last_message_at')
             ->orderByDesc('conversations.created_at')
@@ -59,7 +59,7 @@ class ConversationController extends Controller
 
         return $this->success(
             'Private conversation ready',
-            $conversation->load(['users:id,name,email', 'participants'])
+            $conversation->load(['users:id,name,email,is_online,last_seen_at', 'participants'])
         );
     }
 
@@ -70,8 +70,8 @@ class ConversationController extends Controller
         }
 
         return $this->success('Conversation fetched successfully', $conversation->load([
-            'participants.user:id,name,email',
-            'messages.sender:id,name,email',
+            'participants.user:id,name,email,is_online,last_seen_at',
+            'messages.sender:id,name,email,is_online,last_seen_at',
             'community:id,name',
         ]));
     }

@@ -26,6 +26,8 @@ class User extends Authenticatable implements JWTSubject
         'bio',
         'profilePicture',
         'agreeTerms',
+        'is_online',
+        'last_seen_at',
     ];
 
     protected $hidden = [
@@ -92,6 +94,8 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'agreeTerms' => 'boolean',
+            'is_online' => 'boolean',
+            'last_seen_at' => 'datetime',
             'password' => 'hashed',
         ];
     }

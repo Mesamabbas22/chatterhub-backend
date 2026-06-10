@@ -9,3 +9,7 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
         ->where('user_id', $user->id)
         ->exists();
 });
+
+Broadcast::channel('users.status', function ($user) {
+    return (bool) $user;
+});
